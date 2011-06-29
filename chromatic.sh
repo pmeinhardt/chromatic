@@ -24,7 +24,8 @@ fi
 if test -d $TMP_DIR; then
   echo -e "${RED}Update directory ${TMP_DIR} already exists.${STD}"
   echo -en "Continue anyway? [Y/n] "
-  read -e CONTINUE
+  read -n 1 CONTINUE
+  echo 
   test $CONTINUE = 'Y' || exit -1
 fi
 
@@ -69,7 +70,8 @@ rm -rf $TMP_DIR
 
 # restart?
 echo -en "Restart? [Y/n] "
-read -e RESTART
+read -n 1 RESTART
+echo 
 if test $RESTART = 'Y'; then
   if ps -ax | grep -v grep | grep Chromium > /dev/null; then
     killall TERM Chromium
