@@ -3,7 +3,7 @@
 
 # config.
 TMP_DIR="/tmp/chromium-latest"
-DIST_URI="http://build.chromium.org/f/chromium/snapshots/Mac"
+DIST_URI="http://commondatastorage.googleapis.com/chromium-browser-snapshots/Mac"
 
 
 # output formatting.
@@ -32,7 +32,7 @@ fi
 mkdir -p $TMP_DIR && cd $TMP_DIR
 
 # fetch latest revision number.
-curl $DIST_URI/LATEST -o $TMP_DIR/LATEST --silent && LATEST=`cat ${TMP_DIR}/LATEST`
+curl $DIST_URI/LAST_CHANGE -o $TMP_DIR/LATEST --silent && LATEST=`cat ${TMP_DIR}/LATEST`
 if ! test $LATEST; then
   echo -e "${RED}Could not connect to server.${STD}"
   exit -1
@@ -52,13 +52,14 @@ fi
 
 # load, unpack and install.
 echo "Downloading..."
-curl $DIST_URI/$LATEST/chrome-mac.zip -o $TMP_DIR/chrome-mac.zip --silent
+curl -L $DIST_URI/$LATEST/chrome-mac.zip -o $TMP_DIR/chrome-mac.zip --silent
 
 echo "Unzipping..."
 if ! test -f $TMP_DIR/chrome-mac.zip; then
   echo -e "${RED}Download failed.${STD}"
   exit -1
 fi
+
 unzip -qq $TMP_DIR/chrome-mac.zip
 test -d /Applications/Chromium.app && mv /Applications/Chromium.app ~/.Trash
 cp -R $TMP_DIR/chrome-mac/Chromium.app /Applications
