@@ -4,6 +4,7 @@
 # config.
 TMP_DIR="/tmp/chromium-latest"
 DIST_URI="http://commondatastorage.googleapis.com/chromium-browser-snapshots/Mac"
+# CURL_FLAGS=--silent 
 
 
 # output formatting.
@@ -52,7 +53,7 @@ fi
 
 # load, unpack and install.
 echo "Downloading..."
-curl -L $DIST_URI/$LATEST/chrome-mac.zip -o $TMP_DIR/chrome-mac.zip --silent
+curl -L $DIST_URI/$LATEST/chrome-mac.zip -o $TMP_DIR/chrome-mac.zip $CURL_FLAGS
 
 echo "Unzipping..."
 if ! test -f $TMP_DIR/chrome-mac.zip; then
