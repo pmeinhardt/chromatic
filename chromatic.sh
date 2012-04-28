@@ -1,80 +1,67 @@
 #!/bin/bash
 
+SRC="http://commondatastorage.googleapis.com/chromium-browser-snapshots/Mac"
+DST="/Applications/Chromium.app"
+TMP="$HOME/Downloads"
 
-# config.
-TMP_DIR="/tmp/chromium-latest"
-DIST_URI="http://commondatastorage.googleapis.com/chromium-browser-snapshots/Mac"
-# CURL_FLAGS=--silent 
+# Colorize output.
+RST="\033[0m"
+RED="\033[31m"
+BLU="\033[34m"
 
+# Compare local and latest build numbers.
+LATEST=$(curl -s $SRC/LAST_CHANGE)
+PLIST=$DST/Contents/Info.plist
+LOCAL=
 
-# output formatting.
-STD='\033[0m'
-BOLD='\033[01m'
-BLUE='\033[34m'
-RED='\033[31m'
+if [ -z "$LATEST" ]; then
+  echo -e "${RED}Could not connect to server.${RST}"
+  exit 1
+fi
 
+if [ -f $PLIST ]; then
+  LOCAL=$(/usr/libexec/PlistBuddy -c "Print SVNRevision" $PLIST)
+fi
 
-# usage (currently takes no args).
-if test $# -gt 0; then
-  echo "Usage: ./chromatic.sh"
+echo -e "Latest build version: ${BLU}$LATEST${RST}."
+
+if [ ! -z "$LOCAL" ] && [ "$LATEST" = "$LOCAL" ]; then
+  echo "You're up to date."
   exit 0
 fi
 
-
-# create update dir.
-if test -d $TMP_DIR; then
-  echo -e "${RED}Update directory ${TMP_DIR} already exists.${STD}"
+# Download the build.
+if [ -e $TMP/chrome-mac.zip ]; then
+  echo -e "${RED}Download file ${TMP}/chrome-mac.zip already exists.${RST}"
   echo -en "Continue anyway? [Y/n] "
   read -n 1 CONTINUE
-  echo 
-  test $CONTINUE = 'Y' || exit -1
+  echo
+  test $CONTINUE = 'Y' || exit 0
 fi
 
-mkdir -p $TMP_DIR && cd $TMP_DIR
-
-# fetch latest revision number.
-curl $DIST_URI/LAST_CHANGE -o $TMP_DIR/LATEST --silent && LATEST=`cat ${TMP_DIR}/LATEST`
-if ! test $LATEST; then
-  echo -e "${RED}Could not connect to server.${STD}"
-  exit -1
-fi
-
-echo -e "Latest build version: ${BLUE}${LATEST}${STD}."
-
-# check installed version.
-PLIST_FILE="/Applications/Chromium.app/Contents/Info.plist"
-if test -f $PLIST_FILE; then
-  INSTALLED=`/usr/libexec/PlistBuddy -c "Print SVNRevision" ${PLIST_FILE}`
-  if test $INSTALLED && test $LATEST = $INSTALLED; then
-    echo "You're up to date."
-    exit 0
-  fi
-fi
-
-# load, unpack and install.
 echo "Downloading..."
-curl -L $DIST_URI/$LATEST/chrome-mac.zip -o $TMP_DIR/chrome-mac.zip $CURL_FLAGS
+curl -L $SRC/$LATEST/chrome-mac.zip -o $TMP/chrome-mac.zip
 
+# Unpack and install.
 echo "Unzipping..."
-if ! test -f $TMP_DIR/chrome-mac.zip; then
-  echo -e "${RED}Download failed.${STD}"
-  exit -1
+if [ ! -e $TMP/chrome-mac.zip ]; then
+  echo -e "${RED}Download failed.${RST}"
+  exit 1
 fi
 
-unzip -qq $TMP_DIR/chrome-mac.zip
+unzip -qq $TMP/chrome-mac.zip -d $TMP
 test -d /Applications/Chromium.app && mv /Applications/Chromium.app ~/.Trash
-cp -R $TMP_DIR/chrome-mac/Chromium.app /Applications
+mv $TMP/chrome-mac/Chromium.app /Applications
 
+# Clean up.
+rm -rf $TMP/chrome-mac.zip $TMP/chrome-mac
 
-echo "Cleanup..."
-rm -rf $TMP_DIR
-
-
-# restart?
+# Restart?
 echo -en "Restart? [Y/n] "
 read -n 1 RESTART
-echo 
-if test $RESTART = 'Y'; then
+echo
+
+if [ $RESTART = 'Y' ]; then
   if ps -ax | grep -v grep | grep Chromium > /dev/null; then
     killall TERM Chromium
   fi

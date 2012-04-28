@@ -1,6 +1,6 @@
 
-DST=/usr/local/bin
+DST=/usr/local/bin/chromatic
 
 install: chromatic.sh
-		cp $< $(DST)/$<
-		chmod a+x $(DST)/$<
+	cp $< $(DST)
+	chmod a+x $(DST)
