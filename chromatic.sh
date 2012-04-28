@@ -19,11 +19,11 @@ if [ -z "$LATEST" ]; then
   exit 1
 fi
 
+echo -e "Latest build version: ${BLU}$LATEST${RST}."
+
 if [ -f $PLIST ]; then
   LOCAL=$(/usr/libexec/PlistBuddy -c "Print SVNRevision" $PLIST)
 fi
-
-echo -e "Latest build version: ${BLU}$LATEST${RST}."
 
 if [ ! -z "$LOCAL" ] && [ "$LATEST" = "$LOCAL" ]; then
   echo "You're up to date."
