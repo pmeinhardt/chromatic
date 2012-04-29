@@ -177,7 +177,6 @@ run()
 
   log "Latest build version: $latest"
 
-  # Download the build.
   if [ -e $TMP/chrome-mac.zip ]; then
     log "Download file ${TMP}/chrome-mac.zip already exists."
     [ $force ] || confirm "Continue anyway?" || exit 0
