@@ -37,7 +37,7 @@ current=""
 # Returns nothing.
 log()
 {
-  echo $* >> $out
+  echo $(date "+%H:%M:%S ::") $* >> $out
 }
 
 # Ask to confirm certain actions with a simple Yes or No choice.
@@ -152,13 +152,13 @@ run()
 {
   local args=$(getopt "fhluq" $*)
 
-  local chnglog=
+  local changes=
 
   for arg in $args; do
     case $arg in
       -f) force="force";;
       -q) out=/dev/null;;
-      -l) chnglog="yes";;
+      -l) changes="log";;
       -u) undo; exit $?;;
       -h) help && exit 0;;
     esac
@@ -175,32 +175,32 @@ run()
     log "You're up to date" && exit 0;
   fi
 
-  log "Latest build version: $latest"
+  log "Latest build version: $latest (+$(expr $latest - $current))"
 
   if [ -e $TMP/chrome-mac.zip ]; then
-    log "Download file ${TMP}/chrome-mac.zip already exists."
+    log "Download file ${TMP}/chrome-mac.zip already exists"
     [ $force ] || confirm "Continue anyway?" || exit 0
   fi
 
-  log "Downloading..."
+  log "Downloading latest build"
   if ! download $SOURCE/$latest/chrome-mac.zip $TMP/chrome-mac.zip; then
     log "Download failed" && exit 1
   fi
 
-  log "Unzipping..."
+  log "Unzipping downloaded build"
   if ! unpack $TMP/chrome-mac.zip; then
-    log "Download failed" && exit 1
+    log "Unzipping archive failed" && exit 1
   fi
 
-  log "Installing..."
+  log "Installing to Applications folder"
   install $TMP/chrome-mac/Chromium.app
 
-  log "Cleaning up"
+  log "Cleaning up temporary files from $TMP"
   cleanup $TMP/chrome-mac.zip $TMP/chrome-mac
 
   if [ $force ] || confirm "Restart?"; then restart; fi
 
-  if [ $chnglog ]; then changelog $current $latest; fi
+  if [ $changes ]; then changelog $current $latest; fi
 }
 
 # And go...
