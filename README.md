@@ -21,6 +21,17 @@ When run, chromatic will look for an updated revision of Chromium, downloading i
 
 Once download and unpacking have finished, you can choose to restart Chromium or run the new version the next time you start your browser. Because Chromium remembers your opened tabs though, you'll have almost no off-time at all when restarting right away. _Boom!_
 
+options
+---
+
+    chromatic [-fhluq]
+    Options:
+      -f    do not prompt before overwriting files and restarting
+      -q    be quiet! no status messages on standard out
+      -l    log changes since the current revision
+      -u    undo last update (requires trashed .app to be present)
+      -h    you're looking at it
+
 how it works
 ---
 
