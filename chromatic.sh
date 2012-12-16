@@ -165,7 +165,7 @@ run()
   done
 
   latest=$(curl -s $SOURCE/LAST_CHANGE)
-  current=$(/usr/libexec/PlistBuddy -c "Print SVNRevision" $PLIST)
+  current=$(/usr/libexec/PlistBuddy -c "Print SCMRevision" $PLIST)
 
   if [ -z "$latest" ]; then
     log "Could not retrieve latest revision number" && exit 1
