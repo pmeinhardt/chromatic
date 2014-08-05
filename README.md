@@ -62,5 +62,10 @@ Prints the usage information and help message: `chromatic help`.
 ## How It Works
 
 When installing or updating your Chromium build, chromatic basically follows
-[these steps](http://www.chromium.org/getting-involved/download-chromium)
-for retrieving a snapshot as recommended by the Chromium Dev Team.
+these steps for retrieving a snapshot as recommended by the Chromium Dev Team:
+[http://www.chromium.org/getting-involved/download-chromium](http://www.chromium.org/getting-involved/download-chromium).
+
+## Periodic Updates
+
+You can schedule periodic updates just by using `launchd` or `cron` if you like:
+[https://developer.apple.com/library/mac/documentation/macosx/conceptual/bpsystemstartup/chapters/ScheduledJobs.html](https://developer.apple.com/library/mac/documentation/macosx/conceptual/bpsystemstartup/chapters/ScheduledJobs.html).
