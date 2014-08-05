@@ -1,6 +1,4 @@
+DESTINATION=/usr/local/bin/chromatic
 
-DST=/usr/local/bin/chromatic
-
-install: chromatic.sh
-	cp $< $(DST)
-	chmod a+x $(DST)
+install: chromatic
+	cp -i $< $(DESTINATION) && chmod a+x $(DESTINATION)

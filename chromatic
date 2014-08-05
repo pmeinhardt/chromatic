@@ -1,0 +1,197 @@
+#!/usr/bin/env bash
+#
+# Updates Chromium on Mac OS X
+#
+# https://github.com/pmeinhardt/chromatic
+
+readonly REPOSITORY="https://commondatastorage.googleapis.com/chromium-browser-snapshots"
+readonly CHANGELOG="http://build.chromium.org/f/chromium/perf/dashboard/ui/changelog.html"
+
+readonly CHROMIUM="/Applications/Chromium.app"
+readonly TRASH="$HOME/.Trash"
+
+log() {
+  local line
+
+  for line in "$@"; do
+    echo "$line"
+  done
+}
+
+err() {
+  local line
+
+  for line in "$@"; do
+    echo "$@" >&2
+  done
+}
+
+trash() {
+  local file bname name ext i alt
+
+  for file in "$@"; do
+    bname=$(basename $file)
+    name=${bname//.*}
+    ext=${bname##*.}
+
+    [[ -e "$TRASH/$bname" ]] || mv "$file" $TRASH
+
+    while [[ -e "$file" ]]; do
+      i=$(expr "$i" + 1)
+      alt="$TRASH/$name ($i).$ext"
+      [[ -e "$alt" ]] || mv "$file" "$alt"
+    done
+  done
+}
+
+plist() {
+  local buddy plist
+  plist="$CHROMIUM/Contents/Info.plist"
+  buddy="/usr/libexec/PlistBuddy"
+  $buddy -c "Print $1" $plist 2>/dev/null
+}
+
+help() {
+  log \
+    "Usage: chromatic [command [args]]" \
+    "" \
+    "Commands:" \
+    "  version                  prints the installed version details" \
+    "  info [build number(s)]   opens the changelog (default: installed)" \
+    "  install [build number]   installs a specific build (default: latest)" \
+    "  update                   updates to the most recent build (default)" \
+    "  help                     shows this message"
+}
+
+version() {
+  local shortver revision
+
+  if [[ ! -d $CHROMIUM ]]; then
+    err "Chromium could not be found at $CHROMIUM"
+    log "You can install it using: chromatic install"
+    return 1
+  fi
+
+  dispname=$(plist ":CFBundleDisplayName")
+  shortver=$(plist ":CFBundleShortVersionString")
+  revision=$(plist ":SCMRevision")
+
+  log "$dispname $shortver ($revision)"
+}
+
+info() {
+  local min max
+
+  if [[ $# = 2 ]]; then
+    min=$1
+    max=$2
+  elif [[ $# = 1 ]]; then
+    min=$1
+    max=$min
+  elif [[ $# = 0 ]]; then
+    min=$(plist ":SCMRevision")
+    max=$min
+  fi
+
+  open "$CHANGELOG?url=/trunk&mode=html&range=$min:$max"
+}
+
+install() {
+  local dispname shortver revurl current target delta
+  local binurl tmpdir tmpfile rerun
+
+  if [[ -d $CHROMIUM ]]; then
+    dispname=$(plist ":CFBundleDisplayName")
+    shortver=$(plist ":CFBundleShortVersionString")
+    current=$(plist ":SCMRevision")
+  fi
+
+  target="$1"
+
+  if [[ -z "$target" ]]; then
+    revurl="$REPOSITORY/Mac/LAST_CHANGE"
+    target=$(curl -sf $revurl)
+    if [[ $? != 0 ]]; then
+      err "Failed to fetch the latest build number from $revurl"
+      return 1
+    fi
+  fi
+
+  if [[ "$target" = "$current" ]]; then
+    log "Your version of is up to date"
+    return 0
+  fi
+
+  if [[ -n "$current" ]]; then
+    delta=$(expr $target - $current)
+    [[ $delta -lt 0 ]] || delta="+$delta"
+    log "Updating $dispname $shortver ($current) => ($target) $delta"
+  else
+    log "Installing Chromium ($target)"
+  fi
+
+  binurl="$REPOSITORY/Mac/$target/chrome-mac.zip"
+  tmpdir="/tmp/chromatic/$target"
+  tmpfile="$tmpdir/chrome-mac.zip"
+
+  curl -f -# --create-dirs $binurl -o $tmpfile
+  if [[ $? != 0 ]]; then
+    err "Failed to download build $target the from $binurl"
+    return 1
+  fi
+
+  unzip -qq -o $tmpfile -d $tmpdir
+  if [[ $? != 0 ]]; then
+    err "Failed to extract $tmpfile to $tmpdir"
+    return 1
+  fi
+
+  if [[ -d $CHROMIUM ]]; then
+    trash $CHROMIUM
+    if [[ $? != 0 ]]; then
+      err "Failed to remove existing installation"
+      return 1
+    fi
+  fi
+
+  mv "$tmpdir/chrome-mac/Chromium.app" $(dirname $CHROMIUM)
+  if [[ $? != 0 ]]; then
+    err "Failed to install to application directory"
+    return 1
+  fi
+
+  if ps -cax -o command | grep -x Chromium > /dev/null; then
+    killall Chromium
+    rerun=true
+  else
+    rerun=false
+  fi
+
+  while ps -cax -o command | grep -x Chromium > /dev/null; do
+    : # wait
+  done
+
+  if $rerun; then
+    open $CHROMIUM
+  fi
+}
+
+run() {
+  local command
+
+  command="$1"
+  shift 1
+
+  case "$command" in
+    "help"|"-h"|"--help")   help "$@" ;;
+    "install"|"update"|"")  install "$@" ;;
+    "version")              version "$@" ;;
+    "info")                 info "$@" ;;
+    *)
+      err "Unknown command: $command"
+      help "$@"
+      ;;
+  esac
+}
+
+run "$@"
