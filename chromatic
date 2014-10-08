@@ -51,6 +51,13 @@ plist() {
   $buddy -c "Print $1" $plist 2>/dev/null
 }
 
+scmrev() {
+  revision=$(plist ":SCMRevision")
+  revision=${revision##*#}
+  revision=${revision%%\}}
+  echo -n $revision
+}
+
 help() {
   log \
     "Usage: chromatic [command [args]]" \
@@ -74,7 +81,7 @@ version() {
 
   dispname=$(plist ":CFBundleDisplayName")
   shortver=$(plist ":CFBundleShortVersionString")
-  revision=$(plist ":SCMRevision")
+  revision=$(scmrev)
 
   log "$dispname $shortver ($revision)"
 }
@@ -89,7 +96,7 @@ info() {
     min=$1
     max=$min
   elif [[ $# = 0 ]]; then
-    min=$(plist ":SCMRevision")
+    min=$(scmrev)
     max=$min
   fi
 
@@ -103,7 +110,7 @@ install() {
   if [[ -d $CHROMIUM ]]; then
     dispname=$(plist ":CFBundleDisplayName")
     shortver=$(plist ":CFBundleShortVersionString")
-    current=$(plist ":SCMRevision")
+    current=$(scmrev)
   fi
 
   target="$1"
